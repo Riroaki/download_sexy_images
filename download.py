@@ -6,6 +6,11 @@ from threading import Thread
 MAX_FAIL = 10
 
 
+# Tells whether this image has been downloaded
+def img_exist(link: str, path: str):
+    return exists(path + link[link.rfind('/') + 1:])
+
+
 # Remove urls already parssed in url files
 def remove_urls(url_files: list, dl_dir: list):
     print('Checking urls...')
@@ -13,9 +18,12 @@ def remove_urls(url_files: list, dl_dir: list):
         with open(url_files[i], 'r') as f:
             lines = f.readlines()
         for j in range(len(lines)):
-            img_name = lines[j][lines[j].rfind('/') + 1:-1]
-            if not exists(dl_dir[i] + img_name):
-                break
+            if not img_exist(lines[j][:-1], dl_dir[i]):
+                tmp = lines[j + 1:j + 11]
+                # Make an assurance that the link is not tried
+                # instead of downloading fail
+                if sum([img_exist(line[:-1], dl_dir[i]) for line in tmp]) == 0:
+                    break
         if j:
             print('Removed %d parsed urls in %s' % (j, url_files[i]))
         with open(url_files[i], 'w') as f:
@@ -44,12 +52,14 @@ def download(url_file: str, dl_dir: str):
         # Download fail due to some (network) exceptions
         except Exception as e:
             fail_count += 1
-            fail_urls += line
+            fail_urls.append(line)
             print(' * * * * * * Downloading to %s failed %d times * * * * * *'
                   % (dl_dir, fail_count))
             print(e)
             # Abort if trial times exceed MAX_TRIAL
             if fail_count > MAX_FAIL:
+                with open(url_file, 'w') as f:
+                    f.write(''.join(lines[i:]))
                 print('Abort. Failed urls:')
                 for line in fail_urls:
                     print(line)
