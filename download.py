@@ -43,12 +43,12 @@ def download(url_file: str, dl_dir: str):
             img_name = dl_dir + line[line.rfind('/') + 1:]
             # Download image
             if not exists(img_name):
-                response = get(line).content
+                img = get(line).content
                 if len(response) > 1000:
                     img_count += 1
                     # Save image
                     with open(img_name, 'wb') as f:
-                        f.write(get(line).content)
+                        f.write(img)
         # Download fail due to some (network) exceptions
         except Exception as e:
             fail_count += 1
